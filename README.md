@@ -9,6 +9,8 @@ In Spring '21 Salesforce released the BatchApexErrorEvent to allow developers to
 ## Setup Instructions
 1. Deploy the contents of this repo into your org.
 2. Implement Database.RaisesPlatformEvents on any batch class where you want to add error handling.
-3. Customize your error handling from the Batch Errors tab.
+3. Setup at least one org wide email address
+4. Setup the Batch Apex Error Settings from the Custom Settings section in Setup
+
 
     
