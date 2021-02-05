@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Send_Errors_To__c</fullName>
+    <externalId>false</externalId>
+    <inlineHelpText>If populated any batch errors will be emailed to the emails listed in this field. Separate multiple emails with commas.</inlineHelpText>
+    <label>Send Errors To</label>
+    <required>false</required>
+    <trackTrending>false</trackTrending>
+    <type>TextArea</type>
+</CustomField>

@@ -10,6 +10,10 @@ public with sharing class BatchApexErrorEventHandler {
         if(settings.Store_Errors_in_Custom_Object__c == TRUE){
             copyErrorsToSObject(errorEvents);
         }
+        if(settings.Send_Errors_To__c != null){
+            System.debug('Sending email');
+            emailErrors(errorEvents, settings.Send_Errors_To__c);
+        }
     }
 
     private Batch_Apex_Error_Settings__c getSettings(){
@@ -44,5 +48,34 @@ public with sharing class BatchApexErrorEventHandler {
             ));
         }
         insert errors;
+    }
+
+    private void emailErrors(BatchApexErrorEvent[] errorEvents, String recipients){
+        Messaging.reserveSingleEmailCapacity(1);
+        String[] toAddresses = new String[]{};
+        if(recipients.contains(',')){
+            toAddresses = recipients.split(',');
+        }else{
+            toAddresses.add(recipients);
+        }
+        String subject = 'Batch Apex Error Notification';
+        String body = 'The following batches failed \n\n';
+        for(BatchApexErrorEvent errorEvent: errorEvents){
+            String className = classMap.get(jobMap.get(errorEvent.AsyncApexJobId).ApexClassId).Name;
+            body += className + ' failed during ' + errorEvent.Phase + '.\nException: '+errorEvent.Message+'\nStack trace: '+errorEvent.StackTrace + '\nAffected records: '+errorEvent.JobScope;
+        }
+        sendEmail(toAddresses,subject,body);
+    }
+
+    private static List<Messaging.SendEmailResult> sendEmail(List<String> toAddresses,String subject, String body){
+        System.debug(toAddresses[0]);
+        List<Messaging.SendEmailResult> res;
+        Messaging.SingleEmailMessage mail = new Messaging.SingleEmailMessage();
+        mail.setToAddresses(toAddresses);
+        mail.setSubject(subject);
+        mail.setPlainTextBody(body);
+        mail.setUseSignature(false);
+        res = Test.isRunningTest() ? new List<Messaging.SendEmailResult>{(Messaging.SendEmailResult)JSON.deserialize('{}',Messaging.SendEmailResult.class)} : Messaging.sendEmail(new Messaging.SingleEmailMessage[] {mail});
+        return res;
     }
 }
