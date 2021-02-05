@@ -59,23 +59,25 @@ public with sharing class BatchApexErrorEventHandler {
             toAddresses.add(recipients);
         }
         String subject = 'Batch Apex Error Notification';
-        String body = 'The following batches failed \n\n';
+        String body = 'The following batch failed during execution and did not recover: \n\n';
         for(BatchApexErrorEvent errorEvent: errorEvents){
             String className = classMap.get(jobMap.get(errorEvent.AsyncApexJobId).ApexClassId).Name;
-            body += className + ' failed during ' + errorEvent.Phase + '.\nException: '+errorEvent.Message+'\nStack trace: '+errorEvent.StackTrace + '\nAffected records: '+errorEvent.JobScope;
+            body += 'Job Id: '+errorEvent.AsyncApexJobId+'\n'+className + ' failed during ' + errorEvent.Phase + '.\nException: '+errorEvent.Message+'\nStack trace: '+errorEvent.StackTrace + '\nAffected records: '+errorEvent.JobScope;
         }
         sendEmail(toAddresses,subject,body);
     }
 
     private static List<Messaging.SendEmailResult> sendEmail(List<String> toAddresses,String subject, String body){
-        System.debug(toAddresses[0]);
-        List<Messaging.SendEmailResult> res;
+        OrgWideEmailAddress[] owea = [SELECT Id FROM OrgWideEmailAddress];
         Messaging.SingleEmailMessage mail = new Messaging.SingleEmailMessage();
+        if ( owea.size() > 0 ) {
+            mail.setOrgWideEmailAddressId(owea.get(0).Id);
+        }
         mail.setToAddresses(toAddresses);
         mail.setSubject(subject);
         mail.setPlainTextBody(body);
         mail.setUseSignature(false);
-        res = Test.isRunningTest() ? new List<Messaging.SendEmailResult>{(Messaging.SendEmailResult)JSON.deserialize('{}',Messaging.SendEmailResult.class)} : Messaging.sendEmail(new Messaging.SingleEmailMessage[] {mail});
+        List<Messaging.SendEmailResult> res = Test.isRunningTest() ? new List<Messaging.SendEmailResult>{(Messaging.SendEmailResult)JSON.deserialize('{}',Messaging.SendEmailResult.class)} : Messaging.sendEmail(new Messaging.SingleEmailMessage[] {mail});
         return res;
     }
 }
